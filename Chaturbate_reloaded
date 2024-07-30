@@ -1,0 +1,2015 @@
+// ==UserScript==
+// @name           Chaturbate reloaded
+// @description    Ladroop is back
+// @version        1.2.5
+// @namespace      chaturbate_goes_Ladroop
+// @match          https://*.chaturbate.com/*
+// @exclude        https://secure.chaturbate.com/*
+// @exclude        https://*chaturbate.com/apps/*
+// @exclude        https://*chaturbate.com/b/*
+// @grant          none
+// @run-at         document-end
+// @license	       MIT
+// @copyright      2024 Ladroop
+// ==/UserScript==
+
+
+(function() {
+    'use strict';
+    var version = "1.2.5"
+    var scriptname="Chaturbate reloaded";
+    var i=0;
+    var n=0;
+    var currpage=document.location.href;
+    var roomname= currpage.split("/")[3];
+    if (roomname =="p"){
+        roomname=currpage.split("/")[4];
+    }
+    var allow_private_shows = false;
+    var hls_source = "";
+    var fetching=0;
+    var loggedin=false;
+    var username="";
+    var br="";
+    var vfilter="";
+    var ofils="";
+    var vmirror="";
+    var pos1=0;
+    var pos2=0;
+    var pos3=0;
+    var pos4=0;
+    var vareaid="";
+
+    var observer= new MutationObserver(subsel); // observer for the subselector
+    var observerConfig = {subtree: true, characterData: true, childList: true };
+    var observer4=new MutationObserver(adjusthumbs); // observer for the thump
+    var observerConfig4 ={attributes : true, attributeFilter : ['class'] };
+    var observer41=new MutationObserver(adjusthumbs); // for 2nd list in spy on pvt
+    var observer5=new MutationObserver(adjustbiohumbs); // observer for the thump on bio
+    var observerConfig5 ={attributes : true, attributeFilter : ['style'] };
+    var observer6=new MutationObserver(adjustfollowhumbs); // observer for the thump on followed popout
+    var observerConfig6 ={attributes : true, attributeFilter : ['style'] };
+    var observer7=new MutationObserver(nextcam);//observer if next cam is used
+    var observerConfig7 ={attributes : true, attributeFilter : ['title'] };
+    var observer3 = new MutationObserver(varea); // reset the filters if video area is changed
+    var observerConfig3 = {childList: true, subtree: true }; // changes if video area is changed
+
+    var pmobserver = new MutationObserver(tabpm); // to be called if pm is recieved classic mode
+    var pmobserver2 = new MutationObserver(tabpm); // to be called if pm is recieved theatre mode
+    var pmobserverConfig = {childList: true}; // changes if pm
+    var pmobservenode="";// node to observe if pm is recieved classic mode
+    var pmobservenode2="";// node to observe if pm is recieved theatre mode
+
+    var tabblink=false;
+    var ctitle=document.title;
+    var container="";
+    var bio=false;
+
+    var thisfap="";
+    var fapbr="";
+    var cimg = new Image();
+    var pimg = new Image();
+
+    var usernoteslist = "";
+    var tour="https://chaturbate.com/in/?tour=4uT2&campaign=hgg5k&track=default"
+    var note='<svg style="height: 2.0em; width: 2.0em;" viewBox="0 0 12 12" xmlns="https://www.w3.org/2000/svg"><path fill="hsla(0, 100%, 50%, 0.8)" d="M5.5 2.00002H2C1.73478 2.00002 1.48043 2.10537 1.29289 2.29291C1.10536 2.48044 1 2.7348 1 3.00002V10C1 10.2652 1.10536 10.5196 1.29289 10.7071C1.48043 10.8947 1.73478 11 2 11H9C9.26522 11 9.51957 10.8947 9.70711 10.7071C9.89464 10.5196 10 10.2652 10 10V6.50002" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M9.25 1.24985C9.44891 1.05094 9.7187 0.939194 10 0.939194C10.2813 0.939194 10.5511 1.05094 10.75 1.24985C10.9489 1.44877 11.0607 1.71855 11.0607 1.99985C11.0607 2.28116 10.9489 2.55094 10.75 2.74985L6 7.49985L4 7.99985L4.5 5.99985L9.25 1.24985Z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
+    var nonote='<svg style="height: 2.0em; width: 2.0em;" viewBox="0 0 12 12" xmlns="https://www.w3.org/2000/svg"><path fill="hsla(197, 10%, 98%, 0.3)" d="M5.5 2.00002H2C1.73478 2.00002 1.48043 2.10537 1.29289 2.29291C1.10536 2.48044 1 2.7348 1 3.00002V10C1 10.2652 1.10536 10.5196 1.29289 10.7071C1.48043 10.8947 1.73478 11 2 11H9C9.26522 11 9.51957 10.8947 9.70711 10.7071C9.89464 10.5196 10 10.2652 10 10V6.50002" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M9.25 1.24985C9.44891 1.05094 9.7187 0.939194 10 0.939194C10.2813 0.939194 10.5511 1.05094 10.75 1.24985C10.9489 1.44877 11.0607 1.71855 11.0607 1.99985C11.0607 2.28116 10.9489 2.55094 10.75 2.74985L6 7.49985L4 7.99985L4.5 5.99985L9.25 1.24985Z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
+    var notegrey='<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 12 12" role="img"><path stroke="#48484E" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5.5 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V6.5"></path><path stroke="#48484E" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.25 1.25a1.06 1.06 0 0 1 1.5 1.5L6 7.5 4 8l.5-2z"></path></svg>';
+
+    var discoverpage=false;
+    var thumbpage=false;
+    var tagspage=false;
+    var online=false;
+    var openthumbname="";
+    var opennote="";
+    var data="";
+    var room_status="";
+    var hidurl="https://chaturbate.com/api/ts/roomlist/room-list/?&hidden=true&limit=90&offset=";
+    var hprom=false;
+    var hidoffset=0;
+    var hiddenarray=[];
+    var noaccess=false;
+    var c1=0;
+    var c2=0;
+    var c3=0;
+    var c4=0;
+    var c5=0;
+    var c6=0;
+    var c7=0;
+    var c7a=100;
+    var c8=0;
+
+// to skip agree screen
+    if (!readCookie("agreeterms")){untrace();createCookie("agreeterms","1",30);window.location.reload(true);}
+    if (document.getElementsByClassName("dismiss_notice_tfa_and_email").length>0){
+        document.getElementsByClassName("dismiss_notice_tfa_and_email")[0].click();
+    }
+    setadstyle();
+    if (roomname!="discover"){
+        setstyles();
+    }
+//======== these are specials
+    if (currpage.split("/")[3]=="my_collection"){
+        if (document.getElementsByTagName("video").length>0){
+            savedprvdownload();
+        }
+        return;
+    }
+
+    if (currpage.split("/")[3]=="photo_videos"){
+        collectiondownload();
+        return;
+    }
+//=== get status and pagetype
+    var supporter=true;
+    var login=true;
+    if (document.querySelector('[class="upgrade"]')){
+        supporter=false;
+    }
+    if (document.querySelector('[href="/auth/login/"]')){
+        supporter=false;
+        login=false;
+    }
+    aff();
+    noadd();
+    if (document.querySelector('[data-testid="denied-notice"]')){
+        noaccess=true;
+        bannedroom();
+        return;
+    }
+//==============get pagetype
+    if (roomname=="roomlogin"){
+        roomname=currpage.split("/")[4];
+        passwordfollow();
+        return;
+    }
+    if (roomname=="discover"){discoverpage=true}
+    if (roomname=="tags"){tagspage=true}
+    if (document.getElementById("roomlist_root")){thumbpage=true}
+
+    if (tagspage){setupfollowmove()}
+    if (discoverpage){dothumbpagethings()}
+    if (thumbpage){dothumbpagethings()}
+
+//========= from here model page
+    if (document.getElementById('main')){
+        test();
+    }
+
+//========= wait till container is created
+    function test(){
+        if(document.getElementsByClassName("BioContents").length>0){
+            container=document.getElementsByClassName("BioContents")[0];
+            n=0;
+            setTimeout(function(){test2();}, 100);
+        }else{
+            n++;
+            if (n==100){
+                return;
+            }
+            setTimeout(function(){test();}, 100);
+        }
+    }
+
+    function test2(){
+        if (n==100){return;}
+        if (container.innerHTML.indexOf("Loading…")!=-1){
+            n++;
+            setTimeout(function(){test2();}, 100);
+        }else{
+            n=0;
+            test3();
+        }
+    }
+
+    function test3(){
+        n++;
+        if (n==100){return;}
+        var biocont=container.innerHTML;
+        setTimeout(function(){
+            if (biocont == container.innerHTML){
+                observer7.observe(document.querySelector('[data-paction-name="ActiveRoom"]'),observerConfig7);
+                dobiothings()
+            }else{
+                test3();
+            }
+        }, 100);
+    }
+
+// ============nextcam , cleanup first
+    function nextcam(){
+        observer7.disconnect();
+        observer3.disconnect();
+        if (document.getElementById("notepop")){
+            document.getElementById("notepop").remove();
+        }
+        if (document.getElementById("vcontr")){
+            document.getElementById("vcontr").remove();
+        }
+        if (document.getElementById("ccontr")){
+            document.getElementById("ccontr").remove();
+        }
+        if (document.getElementById("clean")){
+            document.getElementById("clean").remove();
+        }
+        if (document.getElementById("infore")){
+            document.getElementById("infore").remove();
+        }
+        if (document.getElementById("controls")){
+            document.getElementById("controls").remove();
+        }
+        if (document.getElementById("chatcontrols")){
+            document.getElementById("chatcontrols").remove();
+        }
+        if (document.getElementById("rulespop")){
+            document.getElementById("rulespop").remove();
+        }
+        roomname=document.querySelector('[data-paction-name="ActiveRoom"]').innerHTML.split("'")[0].toLowerCase();
+        test();
+    }
+//==========bio things
+    function dobiothings(){
+        bio=true;
+        var toptext = document.querySelector('[data-testid="bio-header"]').innerHTML;
+        if(currpage.split("/")[3]=="p"){
+            document.querySelector('[data-testid="bio-header"]').innerHTML="<a href='https://chaturbate.com/"+roomname+"?tab=bio' id=biotop>"+toptext+"</a>"
+        }else{
+            document.querySelector('[data-testid="bio-header"]').innerHTML="<a href='https://chaturbate.com/p/"+roomname+"?tab=bio' id=biotop>"+toptext+"</a>"
+        }
+        document.getElementById("biotop").addEventListener("click", function(event){window.location.replace(this.href);event.stopPropagation();event.preventDefault();return false});
+        makevidcontrol();
+        cleaninit();
+        linkfix();
+        info();
+        buildnotepop();
+        getnoteslist();
+        if (document.getElementsByTagName("video").length>0){
+            getvid();
+            vreset();
+            document.getElementsByClassName('cbLogo')[0].style.display="none";
+            pmlistner();
+            iagree();
+        }
+    }
+
+//===========thumpage things
+    function dothumbpagethings(){
+        if (!discoverpage){
+            observer.observe(document.querySelector('title'),observerConfig);
+            subsel();
+            refresher();
+        }
+        buildnotepop();
+        getnoteslist();// goes on to setupmove
+        return;
+    }
+
+//========== agree room rules
+    function iagree(){
+        if (document.getElementsByClassName("acceptRulesButton").length>0){
+            document.getElementsByClassName("acceptRulesButton")[0].click();
+        }
+    }
+
+//==============set styles
+    function setstyles(){
+        var style = document.createElement('style');
+        style.setAttribute('type', 'text/css');
+        style.textContent = ".content{overflow: visible; !important ;margin-right:33px !important;margin-left:33px !important}"+
+            ".list{overflow: visible !important}"+
+            ".MoreRooms{overflow: visible !important}"+
+            ".BioContents{position:relative !important}"+
+            ".followedDropdown{z-index:50 !important}"+
+            ".userUpload img{display:none}"+
+            ".lockOverlayBg {background-color:rgba(0, 0, 0, 0) !important;top:50% !important}"+
+            ".lockOverlayBg img{display:none}"+
+            ".userUpload div{background-color:rgba(0, 0, 0, 0) !important}"+
+            ".previewBorder {display:block !important}"+
+            ".previewText {color:black !important}"+
+            ".photoVideoDetailSection img{filter: blur(0px) !important;height:auto !important;width:auto !important; margin-left: auto;margin-right: auto;display:block;min-width:50%;min-height:50%;max-width:100%;max-height:100%}"+
+            ".roomCard {transition: transform .3s}"+
+            ".roomCard:hover {transform: scale(1.37);border-color:red;z-index:20}";
+        document.getElementsByTagName('head')[0].appendChild(style);
+    }
+
+    function setadstyle(){
+        var style = document.createElement('style');
+        style.setAttribute('type', 'text/css');
+        style.textContent = ".ad {background-image:linear-gradient(to right,white 1%, darkred 1%);background-size:220% 100%;background-position:2%;padding:8px;color:white;height:40px !important;font-weight: bold;border-radius:5px}"+
+            ".ad {transition: 1.0s ease-in-out;}"+
+            ".ad:hover {background-position: 200% }";
+        document.getElementsByTagName('head')[0].appendChild(style);
+    }
+
+//================ get usernotelist , continues to setupmove
+    function getnoteslist(){
+        if(!login){usernoteslist="";whatpage();return}
+        var url="https://chaturbate.com/api/notes/usernames/";
+        fetch(url,{ credentials: "same-origin"}).then(
+            function(response) {
+                if (response.status !== 200){
+                    return;
+                }
+                response.json().then(function(data) {
+                    usernoteslist=data;
+                }).then(whatpage);
+            });
+    }
+
+    function whatpage(){
+        setupfollowmove();
+        if (thumbpage){setupmove()}
+        if (bio){setupbiomove()}
+        if (discoverpage){
+            setInterval(addevent2,5000);
+        }
+    }
+
+//===============observer on followed thumbs
+    function setupfollowmove(){
+        var observenode=document.getElementsByClassName("followedDropdown")[0];
+        observer6.observe(observenode,observerConfig6); // calls adjustfollowthumbs
+    }
+
+    function adjustfollowhumbs(){
+        if (document.getElementsByClassName("followedDropdown")[0].style.display!="block"){return}
+        addevent2();
+    }
+
+//================= observer on the page thumbnails
+    function setupmove(){
+        var observenode=document.getElementsByClassName("list")[0];
+        observer4.observe(observenode,observerConfig4); // calls adjustthumbs
+        adjusthumbs();
+        addevent2();
+    }
+
+//============= adjust thumbs on a thumbnail page - call again if changed extra list can be added if spy on cams<< observer4 calls this
+    function adjusthumbs(){
+        if (document.getElementsByClassName("list")[0].classList.contains("loading")){return};
+        document.getElementById("notepop").style.display="none";
+        if (document.getElementsByClassName("list").length>1){
+//=========== 2 list so add evend to the second one too but only once
+            var observenode=document.getElementsByClassName("list")[1];
+            observer41.observe(observenode,observerConfig4);
+            setTimeout(addevent2, 1000);
+        }else{
+            addevent2();
+        }
+    }
+
+//============== adjust thumbs on bio more rooms like this
+    function setupbiomove(){
+        var observenode=document.querySelector('[data-testid="more-rooms-like-this-tab-contents"]').firstChild;
+        observer5.observe(observenode,observerConfig5);
+        addevent2();
+    }
+
+    function adjustbiohumbs(){
+        if(document.querySelector('[data-testid="more-rooms-like-this-tab-contents"]').firstChild.style.display=="block"){return};
+        addevent2();
+    }
+
+//====== put event and note symbol in the thumbnails
+    function addevent2(){
+        if (currpage!=document.location.href){
+            document.getElementById("notepop").style.display="none";
+        }
+        currpage=document.location.href;
+        var tags=document.querySelectorAll('[data-testid="room-card-image"]');
+        for (n=0; n<tags.length; n++){
+            if(!tags[n].name){
+                tags[n].parentNode.href=tags[n].parentNode.href+"?tab=bio";
+                tags[n].parentNode.addEventListener("click", function(event){document.location.href=this.href;event.stopPropagation();event.preventDefault();return false});
+                tags[n].name="Camslut";
+                if (!supporter){
+                    tags[n].parentNode.parentNode.addEventListener("mouseenter", moveimg);
+                    tags[n].parentNode.parentNode.addEventListener("mouseleave", moveimgstop);
+                }
+                var name=tags[n].parentNode.parentNode.querySelector('[data-testid="room-card-username"]');
+                var thumbroomname=name.innerHTML;
+                name.href="https://chaturbate.com/p/"+thumbroomname+"/?tab=bio";
+                name.addEventListener("click", function(event){document.location.href=this.href;event.stopPropagation();event.preventDefault();return false});
+
+                if (usernoteslist!=""){ // not loggedin
+                    if (tags[n].parentNode.parentNode.className=="roomCard camBgColor"){
+                        var newelem=document.createElement('div');
+                        if (usernoteslist.usernames.indexOf(thumbroomname)!=-1){
+                            newelem.innerHTML=note;
+                        }else{
+                             newelem.innerHTML=nonote;
+                        }
+                        newelem.style.position="absolute";
+                        newelem.style.top="0px";
+                        newelem.style.left="0px";
+                        newelem.addEventListener("click", shownote );
+                        newelem.style.cursor="pointer";
+                        newelem.setAttribute("name", thumbroomname);
+                        newelem.name=thumbroomname;
+                        newelem.title="User notes";
+                        tags[n].parentNode.parentNode.appendChild(newelem);
+                    }
+                }
+            }
+        }
+        showhidden();
+    }
+
+ //======================================== hidden tag in followed rooms
+    function showhidden(){
+        if (document.location.href.split("/")[3]=="spy-on-cams"){showhidden4();return;}
+        if (document.location.href.split("/")[3]!="followed-cams"){return;}
+        if (document.location.href.split("/")[4]=="offline"){return;}
+        if (!document.querySelector('[data-testid="room-card-image"]')){return;}
+        if (document.querySelector('[data-testid="room-card-image"]').name=="hid"){return};
+        document.querySelector('[data-testid="room-card-image"]').name="hid";
+        hidoffset=0;
+        hiddenarray=[];
+        showhidden2();
+    }
+
+    function showhidden2(){
+        if (hprom){return}
+        hprom=true;
+        var url=hidurl+hidoffset*90;
+        fetch(url,{ credentials: "same-origin"}).then(
+            function(response) {
+                if (response.status !== 200) {
+                    hprom=false;
+                    return;
+                }
+                response.json().then(function(data){
+                    if (data.rooms != null){
+                        var hiddenlist=data.rooms;
+                        for (n=0; n<hiddenlist.length; n++){
+                            hiddenarray.push(hiddenlist[n].username);
+                        }
+                        var pages=Math.ceil(data.total_count/90);//1.....
+                        hidoffset++;//0.....
+                        if (hidoffset!=pages){
+                            hprom=false;
+                            showhidden2();
+                        }else{
+                            hprom=false;
+                            showhidden3();
+                        }
+                    }
+                });
+            });
+    }
+
+    function showhidden3(){
+        var tags=document.querySelector('[data-testid="room-list-container"]').querySelectorAll('[data-testid="room-card"]');
+        for (n=0; n<tags.length; n++){
+            var name=tags[n].querySelector('[data-testid="room-card-username"]').innerHTML;
+            if (hiddenarray.indexOf(name)!=-1){
+                tags[n].querySelector('[data-testid="thumbnail-label"]').innerHTML=tags[n].querySelector('[data-testid="thumbnail-label"]').innerHTML+" HIDDEN ";
+                tags[n].querySelector('[data-testid="thumbnail-label"]').style.backgroundColor = "blue";
+           }
+        }
+    }
+    function showhidden4(){//useless ;-)
+        if (document.querySelectorAll('[data-testid="room-list-container"]')[1].querySelector('[data-testid="room-card-image"]').name=="hid"){return};
+        document.querySelectorAll('[data-testid="room-list-container"]')[1].querySelector('[data-testid="room-card-image"]').name="hid";
+        var tags=document.querySelectorAll('[data-testid="room-list-container"]')[1].querySelectorAll('[data-testid="room-card"]');
+        for (n=0; n<tags.length; n++){
+            tags[n].querySelector('[data-testid="thumbnail-label"]').innerHTML=tags[n].querySelector('[data-testid="thumbnail-label"]').innerHTML+" HIDDEN ";
+            tags[n].querySelector('[data-testid="thumbnail-label"]').style.backgroundColor = "blue";
+        }
+    }
+
+//================= show note
+    function shownote(e){
+        if(( document.getElementById("notepop").style.display=="block")&&(openthumbname==this.name)){
+            document.getElementById("notepop").style.display="none";
+            openthumbname="";
+            return;
+        }
+        document.getElementById("notepop").style.height="170px";
+        document.getElementById("notearea").value="";
+        document.getElementById("notenote").innerHTML=notegrey + " Note";
+        opennote="";
+        openthumbname=this.name;
+        var xpos=e.pageX;
+        document.getElementById("notearea").innerHTML="";
+        document.getElementById("notepop").style.top=e.pageY+100+"px";
+        document.getElementById("notepop").style.left=xpos+20+"px";
+        document.getElementById("notepop").style.display="block";
+        document.getElementById("notepopName").innerHTML=openthumbname;
+
+        if (usernoteslist.usernames.indexOf(openthumbname)!=-1){
+            var url="https://chaturbate.com/api/notes/for_user/"+openthumbname+"/";
+            fetch(url,{ credentials: "same-origin"}).then(
+                function(response) {
+                    if (response.status !== 200) {
+                        return;
+                    }
+                    response.json().then(function(data){
+                        if (data.text != null){
+                            document.getElementById("notearea").value=data.text;
+                            opennote=data.text;
+                        }
+                    });
+                });
+        }
+    }
+
+//==========make pop up notes
+    function buildnotepop(){
+        var newelem=document.createElement('span');
+        newelem.id="notepop";
+        newelem.style.display="none";
+        newelem.style.position="absolute";
+        newelem.style.overflow="hidden"
+        newelem.style.backgroundColor="rgb(255, 255, 255)";
+        newelem.style.border="1px solid rgb(221, 221, 221)";
+        newelem.style.borderRadius="4px";
+        newelem.style.width="188px";
+        newelem.style.height="170px";
+        newelem.style.zIndex="999";
+        newelem.style.boxShadow="0px 0px 32px rgba(0, 0, 0, 0.32)";
+        document.getElementById("footer-holder").appendChild(newelem);
+
+        newelem=document.createElement('div');
+        newelem.style.backgroundColor = "#dddddd";
+        newelem.style.color="grey";
+        newelem.style.fontWeight="bold";
+        newelem.style.height="15px";
+        newelem.style.fontSize="15px";
+        newelem.style.padding="8px";
+        newelem.style.textAlign="left"
+        newelem.innerHTML='<span id="notepopName" style="text-Overflow: ellipsis; overflow:hidden; width:150px; height:20px; display:inline-block" ></span><span><img src="https://web.static.mmcdn.com/tsdefaultassets/close-gray.svg" style="position: absolute; height: 13px; width: 13px; right: 8px;" title="Close" id="noteclose"></span>';
+        document.getElementById("notepop").appendChild(newelem);
+
+        document.getElementById("noteclose").addEventListener("click", notepopclose);
+
+        newelem=document.createElement('div');
+        newelem.style.backgroundColor = "white";
+        newelem.style.border="1px solid rgb(221, 221, 221)";
+        newelem.style.color="grey";
+        newelem.style.height="15px";
+        newelem.style.fontSize="12px";
+        newelem.style.padding="8px";
+        newelem.style.textAlign="left"
+        newelem.style.cursor="pointer";
+        newelem.addEventListener("click", function(){opendm2(document.getElementById("notepopName").innerHTML)} );
+        newelem.id="notepopLink";
+        newelem.innerHTML='<img src="https://web.static.mmcdn.com/tsdefaultassets/popout-grey-d.svg" height="12px" width="12px"> Popout in new window';
+        document.getElementById("notepop").appendChild(newelem);
+
+        newelem=document.createElement('div');
+        newelem.style.backgroundColor = "white";
+        newelem.style.color="grey";
+        newelem.style.height="10px";
+        newelem.style.fontSize="12px";
+        newelem.style.padding="8px";
+        newelem.style.textAlign="left"
+        newelem.id="notenote";
+        newelem.innerHTML=notegrey + " Note";
+        document.getElementById("notepop").appendChild(newelem);
+
+        newelem=document.createElement('textarea');
+        newelem.id="notearea";
+        newelem.style.height="60px";
+        newelem.style.fontSize="12px";
+        newelem.style.border="1px solid rgb(172, 172, 172)";
+        newelem.style.borderRadius="4px";
+        newelem.style.backgroundColor="rgb(255, 255, 255)";
+        newelem.style.resize="none";
+        newelem.style.padding="5px";
+        newelem.style.width="85%";
+        newelem.setAttribute("placeholder", "Enter notes about this user (only seen by you)");
+        newelem.setAttribute("spellcheck", false);
+        newelem.addEventListener("input",openbutton);
+        newelem.id="notearea";
+        document.getElementById("notepop").appendChild(newelem);
+
+        newelem=document.createElement('div');
+        newelem.id="notecancelsubmit";
+        document.getElementById("notepop").appendChild(newelem);
+
+        newelem=document.createElement("span");
+        newelem.style.position="relative";
+        newelem.style.top="12px";
+        newelem.style.left="-15px";
+        newelem.addEventListener("click",closebutton);
+        newelem.innerHTML='<a href="#" >Cancel</a>';
+        document.getElementById("notecancelsubmit").appendChild(newelem);
+
+        var subbutstyle="color: rgb(255, 255, 255); background: rgba(0, 0, 0, 0) linear-gradient(rgb(255, 151, 53) 0%, rgb(255, 158, 54) 50%, rgb(255, 112, 2) 60%) repeat scroll 0% 0%; font-family: UbuntuMedium, Helvetica, Arial, sans-serif; font-size: 12px; padding: 4px 10px 5px; position: relative; right: 40px; top:10px; float: right; border-radius: 4px; cursor: pointer;";
+
+        newelem=document.createElement("span");
+        newelem.setAttribute("style", subbutstyle);
+        newelem.addEventListener("click",savenote);
+        newelem.innerHTML="Save"
+        document.getElementById("notecancelsubmit").appendChild(newelem);
+    }
+//============= save note
+    function savenote(){
+        var notetext=document.getElementById("notearea").value;
+        var url="https://chaturbate.com/api/notes/for_user/"+openthumbname+"/";
+        var csrftoken= readCookie("csrftoken");
+        var data = new FormData();
+        data.append( "text", notetext );
+        fetch(url,
+              {
+            method: "POST",
+            headers: {
+                'x-csrftoken': csrftoken,
+                'x-requested-with': 'XMLHttpRequest'
+            },
+            body: data
+        }).then(aftersave)
+    }
+
+    function aftersave(){
+        var notetext=document.getElementById("notearea").value;
+        var doupdate=false;
+        if ((opennote=="")||(notetext=="")){
+            doupdate=true;
+        }
+        opennote=notetext;
+        closebutton();
+        if (doupdate){updatedm()}
+    }
+
+    function notepopclose(){
+        document.getElementById("notepop").style.display="none"
+    }
+
+    function openbutton(){
+        document.getElementById("notepop").style.height="215px";
+        document.getElementById("notenote").innerHTML=notegrey + " Note (unsaved)";
+        document.getElementById("notearea").value=document.getElementById("notearea").value.replace("$"," "+new Date().toLocaleDateString()+" ");
+        if(opennote==document.getElementById("notearea").value){
+            closebutton()
+        }
+    }
+    function closebutton(){
+        document.getElementById("notenote").innerHTML=notegrey + " Note";
+        document.getElementById("notepop").style.height="170px";
+        document.getElementById("notearea").value=opennote;
+    }
+//=========== DM window
+    function opendm2(that){
+        var url="http://chaturbate.com/dm/"+that;
+        var dmwindow=window.open(url,that,'toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=yes,width=800,height=800');
+        dmwindow.onload = function(){
+            this.addEventListener('unload', function(){setTimeout(function(){updatedm();},1000);})
+        }
+    }
+
+    function updatedm(){
+        var url="https://chaturbate.com/api/notes/usernames/";
+        fetch(url,{ credentials: "same-origin"}).then(
+            function(response) {
+                if (response.status !== 200){
+                    return;
+                }
+                response.json().then(function(data) {
+                    usernoteslist=data;
+                }).then(updatedm2);
+            });
+    }
+
+    function updatedm2(){
+        var tags=document.querySelectorAll('[title="User notes"]');
+        for (n=0; n<tags.length; n++){
+             if (usernoteslist.usernames.indexOf(tags[n].getAttribute("name"))!=-1){
+                 tags[n].innerHTML=note;
+             }else{
+                 tags[n].innerHTML=nonote;
+             }
+         }
+    }
+
+//=========== animated thumbs
+    function moveimg(){ //comes from holder
+        thisfap=this;
+        fapbr=thisfap.getElementsByTagName("img")[0].src.split("/")[4].split("?")[0];
+        cimg.addEventListener("load",regetimg);
+        cimg.src = "https://jpeg.live.mmcdn.com/minifwap/"+fapbr+"?f="+ new Date().getTime();
+    }
+
+    function moveimgstop(){ // comes from holder
+        cimg.removeEventListener("load",regetimg);
+    }
+
+    function regetimg(){
+        thisfap.getElementsByTagName("img")[0].src=cimg.src;
+        setTimeout(function(){ cimg.src = "https://jpeg.live.mmcdn.com/minifwap/"+fapbr+"?f="+ new Date().getTime();}, 50);//~6fps at 100ms load time
+    }
+
+//========refresh after tab change
+    function refresher(){
+        if ((currpage.split("/")[3]=="followed-cams")||(currpage.split("/")[3]=="spy-on-cams")){
+            document.addEventListener("visibilitychange", () => {
+                if (!document.hidden) {
+                    location.reload();
+                }
+            });
+        }
+    }
+//=========adds and stuff
+    function noadd(){
+        if (document.getElementsByClassName('ad').length>0){
+            var info=scriptname+" version "+version+" is active."
+            if (!readCookie("goodboy")){
+                if (!login){
+                    info=info+"<br>Support this script, <a href='"+tour+"'>create a new account.</a>";
+                    if(document.querySelector('[data-testid="sign-up-tab"]')){
+                        document.querySelector('[data-testid="sign-up-tab"]').href=tour;
+                    }
+                }else{
+                    info=info+"<br>Support this script,<a href='https://chaturbate.com/auth/logout/'> log out </a>and create a new account.";
+                }
+                document.getElementsByClassName('ad')[0].innerHTML=info;
+            }else{
+                document.getElementsByClassName('ad')[0].innerHTML=info+"<br>Thank you for your support.";
+            }
+        }
+    }
+    function aff(){
+        if (currpage=="https://chaturbate.com/accounts/welcome/"){createCookie("goodboy","1",14);return;}
+        if (currpage.split("?").length>1){
+            if (currpage.split("?")[1].indexOf("campaign=hgg5k")!=-1){// me as aff
+                createCookie("agreeterms","1",30);
+                if (!login){
+                    document.location.href="https://chaturbate.com/accounts/register/?src=header&auipsrc=navbar";// direct to signup if not loggedd in on my tour
+                }
+                return;
+            }
+            if (currpage.split("?")[1].indexOf("campaign=")!=-1){ // some other aff
+                if(!login){
+                    untrace();
+                    document.location.href=tour;// go to my tour if not logged in
+                }
+                return;
+            }
+        }
+        if (currpage.split("?")[0]=="https://chaturbate.com/auth/login/"){// clear traces of other accounts when you login
+            localStorage.clear();
+            sessionStorage.clear();
+        }
+        if (currpage.split("?")[0]=="https://chaturbate.com/accounts/register/"){// signup from my tour
+            localStorage.clear();
+            sessionStorage.clear();
+        }
+    }
+    function untrace(){
+        var cookies = document.cookie.split("; ");
+        for (var c = 0; c < cookies.length; c++) {
+            var d = window.location.hostname.split(".");
+            while (d.length > 0) {
+                var cookieBase = encodeURIComponent(cookies[c].split(";")[0].split("=")[0]) + '=; expires=Thu, 01-Jan-1970 00:00:01 GMT; domain=' + d.join('.') + ' ;path=';
+                var p = location.pathname.split('/');
+                document.cookie = cookieBase + '/';
+                while (p.length > 0) {
+                    document.cookie = cookieBase + p.join('/');
+                    p.pop();
+                };
+                d.shift();
+            }
+        }
+        localStorage.clear();
+        sessionStorage.clear();
+    }
+
+//=======subselector
+    function subsel(){
+        createCookie("selected",currpage,1);
+        if((document.location.href.indexOf("spy-on-cams")==-1)&&(document.location.href.indexOf("followed-cams")==-1)&&(document.location.href.indexOf("/current_app_use/")==-1)){
+            var newelem=document.createElement('li');
+            var data='<form><select id="subsel" style="margin: 0px 0px 0px 0px; background: #DDE9F5; color:#5E81A4; border-radius: 4px 4px 0px 0px;padding: 5px 1px 4px 12px; font-weight: 400; font-size: 13px; font-family: \'UbuntuMedium\',Arial,Helvetica,sans-serif;" >'+
+                '<option value="/XX-cams">ALL CAMS IN CATEGORY</option>'+
+                '<option value="/exhibitionist-cams/XX">EXHIBITIONIST CAMS</option>'+
+                '<option value="/gaming-cams/XX">GAMING CAMS</option>'+
+                '<option value="/new-cams/XX">NEW CAMS</option>'+
+                '<option value="/teen-cams/XX">TEEN CAMS (18+)</option>'+
+                '<option value="/18to21-cams/XX">18 TO 21 CAMS</option>'+
+                '<option value="/21to35-cams/XX">21 TO 35 CAMS</option>'+
+                '<option value="/30to50-cams/XX">30 TO 50 CAMS</option>'+
+                '<option value="/mature-cams/XX">MATURE CAMS (50+)</option>'+
+                '<option value="/north-american-cams/XX">NORTH AMERICAN CAMS</option>'+
+                '<option value="/euro-russian-cams/XX">EURO RUSSIAN CAMS</option>'+
+                '<option value="/south-american-cams/XX">SOUTH AMERICAN CAMS</option>'+
+                '<option value="/asian-cams/XX">ASIAN CAMS</option>'+
+                '<option value="/other-region-cams/XX">OTHER REGION CAMS</option>'+
+                '<option value="/6-tokens-per-minute-private-cams/XX">6 TOKENS PER MINUTE</option>'+
+                '<option value="/12-18-tokens-per-minute-private-cams/XX">12 - 18 TOKENS PER MINUTE</option>'+
+                '<option value="/30-42-tokens-per-minute-private-cams/XX">30 - 42 TOKENS PER MINUTE</option>'+
+                '<option value="/60-72-tokens-per-minute-private-cams/XX">60 - 72 TOKENS PER MINUTE</option>'+
+                '<option value="/90-tokens-per-minute-private-cams/XX">90+ TOKENS PER MINUTE</option>'+
+                '</select></form>';
+            var	uloc=document.location.href+"//";
+            var loc=uloc.split("/");
+            var	check=loc[3]+loc[4];
+            var gen="";
+            if(check.indexOf("male") != -1){gen="male";}
+            if(check.indexOf("female") != -1){gen="female";}
+            if(check.indexOf("couple") != -1){gen="couple";}
+            if(check.indexOf("trans") != -1){gen="trans";}
+            data=data.replace(/XX/gi,gen);
+            if (gen === ""){data=data.replace("-cams","");}
+            data=data.replace('<option value="/'+loc[3],'<option selected value="/'+loc[3]);
+            newelem.innerHTML=data;
+            document.getElementsByClassName('sub-nav')[0].appendChild(newelem);
+            document.getElementById("subsel").addEventListener('change',subselected);
+        }
+    }
+
+//============go to the selected page
+    function subselected(){
+        document.location.href=document.getElementById("subsel").options[document.getElementById("subsel").selectedIndex].value;
+    }
+
+//==========see pm in chat
+    function pmlistner(){
+        setTimeout(function(){
+            pmobservenode=document.getElementById('pm-tab-default');//split mode
+            pmobservenode2=document.getElementById('pm-tab-fvm');// full video mode
+            pmobserver.observe(pmobservenode, pmobserverConfig);
+            pmobserver2.observe(pmobservenode2, pmobserverConfig);
+        }, 2000);
+    }
+
+//=================PM in tab
+    function tabpm(){
+        if (document.visibilityState=="visible"){return;}//tab is in focus, do nothing
+        if ((pmobservenode.getElementsByTagName("span")[0].innerHTML=="PM")||(pmobservenode2.getElementsByTagName("span")[0].innerHTML=="PM")){return;}// if 1 of 2 is only "PM" then pm tab is open
+        if (tabblink==true){return;}// already blinking
+        tabblink=true;
+        tabblinker();
+    }
+
+    function tabblinker(){
+        if (document.title == "PM !! PM"){
+            document.title = "!! PM !!";
+        }else{
+            document.title = "PM !! PM";
+        }
+        if (document.visibilityState!="visible"){ // tab out focus
+            setTimeout(tabblinker,500);
+        }else{// tab became in focus
+            document.title=ctitle;
+            tabblink=false;
+        }
+    }
+
+//=================================== make all new buttons and sliders and set the video filter
+    function makevidcontrol(){
+        var slistyle="text-align: left; width: 310px;margin-right: 4px;color: rgb(255, 255, 255); background: rgba(0, 0, 0, 0) linear-gradient(rgb(255, 151, 53) 0%, rgb(255, 158, 54) 50%, rgb(255, 112, 2) 60%) repeat scroll 0% 0%; font-family: UbuntuMedium, Helvetica, Arial, sans-serif; font-size: 12px; text-shadow: rgb(241, 129, 18) 1px 1px 0px; padding: 4px 10px 3px; position: relative; top: 0px; right: 1px; float: right; border-radius: 4px; display: inline;";
+        var butstyle="margin-right: 5px;color: rgb(255, 255, 255); background: rgba(0, 0, 0, 0) linear-gradient(rgb(255, 151, 53) 0%, rgb(255, 158, 54) 50%, rgb(255, 112, 2) 60%) repeat scroll 0% 0%; font-family: UbuntuMedium, Helvetica, Arial, sans-serif; font-size: 12px; text-shadow: rgb(241, 129, 18) 1px 1px 0px; padding: 4px 10px 3px; position: relative;right: 1px;top:-4px; float: right; border-radius: 4px; cursor: pointer; display: inline;";
+        var cbutstyle="margin-right: 5px;color: rgb(255, 255, 255); background: rgba(0, 0, 0, 0) linear-gradient(rgb(255, 151, 53) 0%, rgb(255, 158, 54) 50%, rgb(255, 112, 2) 60%) repeat scroll 0% 0%; font-family: UbuntuMedium, Helvetica, Arial, sans-serif; font-size: 12px; text-shadow: rgb(241, 129, 18) 1px 1px 0px; padding: 4px 10px 3px; position: relative;right: 1px; float: right; border-radius: 4px; cursor: pointer; display: inline;";
+
+        if (document.getElementById("satisfactionScore")){
+            var place=document.getElementById("satisfactionScore");
+        }else{
+            place=document.getElementsByClassName("gradient SatisfactionRating")[0];
+        }
+
+        var newelem=document.createElement('span');
+        newelem.setAttribute("style", butstyle);
+        newelem.innerHTML="VIDEO CONTROLS ON/OFF";
+        newelem.addEventListener("click", vcontrol);
+        newelem.id="vcontr";
+        document.querySelector('[data-testid="room-tab-bar"]').insertBefore(newelem,place.nextSibling);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", butstyle);
+        newelem.style.display="none";
+        newelem.innerHTML="CHAT CONTROLS ON/OFF";
+        newelem.addEventListener("click", ccontrol);
+        newelem.id="ccontr";
+        document.querySelector('[data-testid="room-tab-bar"]').insertBefore(newelem,place.nextSibling);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", butstyle);
+        newelem.innerHTML="CLEAN PROFILE = ON";
+        newelem.style.width="125px";
+        newelem.style.display="none";
+        newelem.id="clean";
+        newelem.addEventListener("click", cleancookie);
+        document.querySelector('[data-testid="room-tab-bar"]').insertBefore(newelem,place.nextSibling);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", butstyle);
+        newelem.innerHTML="RELOAD INFO";
+        newelem.addEventListener("click", newinfo);
+        newelem.id="infore";
+        document.querySelector('[data-testid="room-tab-bar"]').insertBefore(newelem,place.nextSibling);
+
+        newelem=document.createElement('div');
+        newelem.id="controls";
+        newelem.style.display="none";
+        newelem.style.position="absolute";
+        newelem.style.backgroundColor="rgb(255, 255, 211)";
+        newelem.style.border="2px solid rgb(244, 115, 33)";
+        newelem.style.borderRadius="6px";
+        newelem.style.width="340px";
+        newelem.style.padding="12px";
+        newelem.style.marginTop="600px";
+        newelem.style.right="320px";
+        newelem.style.zIndex="999";
+        document.getElementById("user_information").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", cbutstyle);
+        newelem.innerHTML="MIRROR VIDEO";
+        newelem.addEventListener("click",mirror);
+        document.getElementById("controls").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", cbutstyle);
+        newelem.innerHTML="INVERT VIDEO";
+        newelem.addEventListener("click",invert);
+        document.getElementById("controls").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", cbutstyle);
+        newelem.innerHTML="DRAG";
+        newelem.style.cursor="move";
+        newelem.addEventListener("mousedown",dragMouseDown);
+        document.getElementById("controls").appendChild(newelem);
+
+        newelem=document.createElement('br');
+        document.getElementById("controls").appendChild(newelem);
+        newelem=document.createElement('br');
+        document.getElementById("controls").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", slistyle);
+        newelem.innerHTML="BRIGHTNESS : <input type='range' id='myRange' min=0 max=200 value=100 style='width: 200px;height:11px;cursor: pointer;float: right;'>";
+        document.getElementById("controls").appendChild(newelem);
+        document.getElementById("myRange").addEventListener("input",badjust);
+
+        newelem=document.createElement('br');
+        document.getElementById("controls").appendChild(newelem);
+        newelem=document.createElement('br');
+        document.getElementById("controls").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", slistyle);
+        newelem.innerHTML="CONTRAST : <input type='range' id='myRange1' min=0 max=200 value=100 style='width: 200px;height:11px;cursor: pointer;float: right;'>";
+        document.getElementById("controls").appendChild(newelem);
+        document.getElementById("myRange1").addEventListener("input",cadjust);
+
+        newelem=document.createElement('br');
+        document.getElementById("controls").appendChild(newelem);
+        newelem=document.createElement('br');
+        document.getElementById("controls").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", slistyle);
+        newelem.innerHTML="SATURATION : <input type='range' id='myRange2' min=0 max=200 value=100 style='width: 200px;height:11px;cursor: pointer;float: right;'>";
+        document.getElementById("controls").appendChild(newelem);
+        document.getElementById("myRange2").addEventListener("input",sadjust);
+
+        newelem=document.createElement('br');
+        document.getElementById("controls").appendChild(newelem);
+        newelem=document.createElement('br');
+        document.getElementById("controls").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", slistyle);
+        newelem.innerHTML="HUE : <input type='range' id='myRange3' min=180 max=540 value=360 style='width: 200px;height:11px;cursor: pointer;float: right;'>";
+        document.getElementById("controls").appendChild(newelem);
+        document.getElementById("myRange3").addEventListener("input",hadjust);
+
+        newelem=document.createElement('br');
+        document.getElementById("controls").appendChild(newelem);
+        newelem=document.createElement('br');
+        document.getElementById("controls").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", cbutstyle);
+        newelem.innerHTML="HIDE CONTROL PANEL";
+        newelem.addEventListener("click",vcontrol);
+        document.getElementById("controls").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", cbutstyle);
+        newelem.innerHTML="RESET ALL";
+        newelem.addEventListener("click",vreset);
+        document.getElementById("controls").appendChild(newelem);
+
+        newelem=document.createElement('div');
+        newelem.id="chatcontrols";
+        newelem.style.display="none";
+        newelem.style.position="absolute";
+        newelem.style.backgroundColor="rgb(255, 255, 211)";
+        newelem.style.border="2px solid rgb(244, 115, 33)";
+        newelem.style.borderRadius="6px";
+        newelem.style.width="340px";
+        newelem.style.padding="12px";
+        newelem.style.top="40px";
+        newelem.style.right="10px";
+        newelem.style.zIndex="99";
+        document.querySelector('[data-testid="room-tab-bar"]').insertBefore(newelem,place.nextSibling);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", slistyle);
+        newelem.style.margin="2px";
+        newelem.innerHTML="Small emoticons : <input type='range' id='c1' min=0 max=1 value=0 style='width: 40px;height:11px;cursor: pointer;float: right;'>";
+        document.getElementById("chatcontrols").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", slistyle);
+        newelem.style.margin="2px";
+        newelem.innerHTML="Notice : <input type='range' id='c2' min=0 max=1 value=0 style='width: 40px;height:11px;cursor: pointer;float: right;'>";
+        document.getElementById("chatcontrols").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", slistyle);
+        newelem.style.margin="2px";
+        newelem.innerHTML="Subject change : <input type='range' id='c3' min=0 max=1 value=0 style='width: 40px;height:11px;cursor: pointer;float: right;'>";
+        document.getElementById("chatcontrols").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", slistyle);
+        newelem.style.margin="2px";
+        newelem.innerHTML="Mod/fan enter-leave : <input type='range' id='c4' min=0 max=1 value=0 style='width: 40px;height:11px;cursor: pointer;float: right;'>";
+        if (document.getElementById("biotop").innerHTML.indexOf("Bio and Free Webcam")==-1){newelem.style.display="none"}//only in english
+        document.getElementById("chatcontrols").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", slistyle);
+        newelem.style.margin="2px";
+        newelem.innerHTML="Grey user chat : <input type='range' id='c5' min=0 max=1 value=0 style='width: 40px;height:11px;cursor: pointer;float: right;'>";
+        document.getElementById("chatcontrols").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", slistyle);
+        newelem.style.margin="2px";
+        newelem.innerHTML="Moderator chat : <input type='range' id='c6' min=0 max=1 value=0 style='width: 40px;height:11px;cursor: pointer;float: right;'>";
+        document.getElementById("chatcontrols").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", slistyle);
+        newelem.style.margin="2px";
+        newelem.innerHTML="Tips smaller than : <input type='number' id='c7a' min='2' max='1000' value='100' style='width: 4em;height:11px;cursor: pointer; '> tokens.<input type='range' id='c7' min=0 max=1 value=0 style='width: 40px;height:11px;cursor: pointer;float: right;'>";
+        document.getElementById("chatcontrols").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", slistyle);
+        newelem.style.margin="2px";
+        newelem.innerHTML="Lovense messages : <input type='range' id='c8' min=0 max=1 value=0 style='width: 40px;height:11px;cursor: pointer;float: right;'>";
+        document.getElementById("chatcontrols").appendChild(newelem);
+
+        newelem=document.createElement('span');
+        newelem.setAttribute("style", slistyle);
+        newelem.style.margin="2px";
+        newelem.innerHTML="Tokens recived : <span id='c9' style='width: 40px;height:11px;float: right; color:black'>0</span>";
+        document.getElementById("chatcontrols").appendChild(newelem);
+
+     }
+
+//============= in html5 player they keep adding/removing the video node so i need a dynamic reference
+    function getvid(){
+        vareaid=document.getElementsByTagName("video")[0].id;
+        observer3.observe(document.getElementsByTagName("video")[0].parentNode, observerConfig3);
+    }
+
+//======================== video control functions
+    function varea(){
+        var vnode=document.getElementById(vareaid);
+        vnode.style.filter=vfilter;
+		vnode.style.transform=vmirror;
+        if (document.querySelector('[data-testid="video-container"]')&&vnode.src){
+            document.querySelector('[data-testid="video-container"]').style.background="rgb(51, 51, 51)";
+        }
+        document.getElementById("vcontr").style.display="block";
+        if (!vnode.src){
+            document.getElementById("vcontr").style.display="none";
+            document.getElementById("controls").style.display="none";
+        }
+        return vnode;
+    }
+
+// brightness adjust
+	function badjust(){
+		br=document.getElementById("myRange").value;
+		ofils=varea().style.filter.split(" ");
+        vfilter="brightness("+br+"%) "+ofils[1]+" "+ofils[2]+" "+ofils[3]+" "+ofils[4];
+        varea();
+	}
+
+// contrast adjust
+	function cadjust(){
+		br=document.getElementById("myRange1").value;
+		ofils=varea().style.filter.split(" ");
+        vfilter=ofils[0]+" contrast("+br+"%) "+ofils[2]+" "+ofils[3]+" "+ofils[4];
+		varea();
+    }
+
+// saturation adjust
+	function sadjust(){
+		br=document.getElementById("myRange2").value;
+		ofils=varea().style.filter.split(" ");
+		vfilter=ofils[0]+" "+ofils[1]+" "+ofils[2]+" saturate("+br+"%) "+ofils[4];
+        varea();
+	}
+
+// hue adjust
+	function hadjust(){
+		br=document.getElementById("myRange3").value;
+		if (br > 359){br=br-360;}
+		ofils=varea().style.filter.split(" ");
+		vfilter=ofils[0]+" "+ofils[1]+" "+ofils[2]+" "+ofils[3]+" hue-rotate("+br+"deg)";
+        varea();
+	}
+
+// invert video
+	function invert(){
+		ofils=varea().style.filter.split(" ");
+		br=" invert(100%) ";
+		if (ofils[2]=="invert(100%)"){br=" invert(0%) ";}
+		vfilter=ofils[0]+" "+ofils[1]+br+ofils[3]+" "+ofils[4];
+        varea();
+	}
+
+// mirror video
+	function mirror(){
+		if (varea().style.transform=="none"){
+            vmirror="matrix(-1, 0, 0, 1, 0, 0)";
+			varea();
+
+		}else{
+            vmirror="none";
+			varea();
+		}
+	}
+
+// reset all video adjustments
+	function vreset(){
+        vfilter="brightness(100%) contrast(100%) invert(0%) saturate(100%) hue-rotate(0deg)";
+        vmirror="none";
+  		varea();
+ 		document.getElementById("myRange").value=100;
+		document.getElementById("myRange1").value=100;
+		document.getElementById("myRange2").value=100;
+		document.getElementById("myRange3").value=360;
+	}
+
+// video controls on/off
+    function vcontrol(){
+        if (document.getElementById("controls").style.display=="block"){
+            document.getElementById("controls").style.display="none";
+        }else{
+            document.getElementById("controls").style.display="block";
+        }
+    }
+
+// pull and drag functions
+    function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        document.onmousemove = elementDrag;
+    }
+
+// when moved while clicked- part of dragMouseDown()
+    function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        var x =parseInt(document.getElementById("controls").style.right);
+        var y =parseInt(document.getElementById("controls").style.marginTop);
+        if ((pos3>=110)&&(pos3<=window.innerWidth-324)){
+            document.getElementById("controls").style.right = (x + pos1) + "px";
+        }
+        if ((y-pos2>-50)&&(pos4<=window.innerHeight-20)){
+            document.getElementById("controls").style.marginTop = (y - pos2) + "px";
+        }
+    }
+
+// stop moving when mouse button is released- part of dragMouseDown()
+    function closeDragElement() {
+        document.onmouseup = null;
+        document.onmousemove = null;
+    }
+
+// get basic info, hide video controls in an offline room and on bio only
+     function info(){
+         var url="https://chaturbate.com/api/chatvideocontext/"+roomname+"/";
+         fetching++;
+         fetch(url,{ credentials: "same-origin"}).then(
+             function(response) {
+                 if (response.status !== 200){
+                     fetching--;
+                     return;
+                 }
+                 response.json().then(function(roomdata) {
+                     data=roomdata;
+                     fetching--;
+                     setprofileinfo();
+                 });
+             });
+     }
+
+    function setprofileinfo(){
+        room_status=data.room_status;
+        username=data.viewer_username;
+        var ppage=false;
+        if(currpage.split("/")[3]=="p"){
+            ppage=true;
+        }
+        if (noaccess){
+            ppage=true;
+        }
+        if (username!="AnonymousUser"){
+            loggedin=true;
+        }
+        if (room_status =="offline"){
+            document.getElementById("vcontr").style.display="none";
+        }
+        if(ppage){
+            document.getElementById("vcontr").style.display="none";
+            wprof("Find:","<a href='https://camgirlfinder.net/models?m="+roomname+"&p=cb&g=a' rel=noreferrer target='_new'>Open in camgirlfinder</a>");
+        }
+        wprof("Statistics:","<a href='https://statbate.com/search/1/"+roomname+"' rel=noreferrer target='_new'>Open in statbate</a>");
+        wprof("Schedule:","<a href='https://www.cbhours.com/user/"+roomname+".html' rel=noreferrer target='_new'>Open in cbhours</a>");
+        if (document.getElementById("vcontr").style.display=="none"){
+            if (!data.opt_out){
+                wprof("Full video (anon):","<a href='https://www.girls4cock.com/fullvideo/?b="+roomname+"' rel=noreferrer target='_new'>Open full video mode as anonymous</a>");
+                if (!noaccess){
+                    wprof("Full video:","<a href='https://chaturbate.com/fullvideo/?b="+roomname+"' rel=noreferrer target='_new'>Open full video mode</a>");
+                }
+            }
+        }
+        if (data.opt_out){
+            wprof("On network sites:","No");
+        }
+
+        if(data.chat_rules!=""){
+            makerulesarea(data.chat_rules);
+            wprof ("Chat rules:","<a href=# id='rulesview'>Yes, click to read</a>");
+            document.getElementById("rulesview").addEventListener("click",function(){
+                if(document.getElementById("rulespop").style.display=="none"){
+                    document.getElementById("rulespop").style.display="block";
+                }
+                else{
+                    document.getElementById("rulespop").style.display="none";
+                }
+            });
+        }
+        if(ppage){
+            wprof("Users in room:",data.num_viewers);
+        }
+        if (data.low_satisfaction_score){
+            wprof("Satisfaction score:","<font color=#CC0000>LOW !!!</font>");
+        }
+
+        if (data.is_moderator){
+            wprof("Moderator:","Yes");
+        }
+        if (data.fan_club_is_member){
+            wprof("Fanclub member:","Yes");
+        }
+        if ((room_status=="offline")||(ppage)){
+            wprof("Room topic:","<div style='width:450px;height:auto'>"+data.room_title+"</div>");
+        }
+        if (ppage){
+            if (room_status.indexOf("hidden")!=-1){
+                wprof("Hidden message:",data.hidden_message);
+            }
+        }
+        if (room_status != "offline"){
+            hls_source=data.hls_source;
+            navigator.clipboard.writeText(hls_source);
+            var vidqual=data.quality.quality
+            if (!vidqual){vidqual= "unknown"};
+            wprof("Video quality:",vidqual);
+        }
+        wprof("Video:",room_status);
+        if (data.tips_in_past_24_hours !== 0){
+            wprof("You tipped:",data.tips_in_past_24_hours+" Tk/24h");
+        }
+        if (!data.is_age_verified){
+            wprof("Status:","Exhibitionist");
+        }else{
+            if (data.allow_private_shows){
+                if (data.spy_private_show_price !== 0){
+                    wprof("Spy on private:",data.spy_private_show_price+" Tk/min");
+                }else{
+                    wprof("Spy on private:","Disabled");
+                }
+                wprof("Minimum private:",data.private_min_minutes+" Minutes");
+                wprof("Private recording:",data.allow_show_recordings ? "Yes":"No");
+                wprof("Privateshow:",data.private_show_price+" Tk/min");
+            }else{
+                wprof("Privateshow:","Disabled");
+            }
+        }
+        if (login){
+            if (!noaccess){
+                wprof ("DM:","<a href='https://chaturbate.com/dm/"+roomname+"/' id='dmpop'>Open window</a>");
+                document.getElementById("dmpop").addEventListener("click", function(event){opendm(this);event.stopPropagation();event.preventDefault();return false});
+            }
+            getnotes();
+        }
+        if ((room_status!="offline")&&(!ppage)){chatchange()}
+    }
+
+//============ chat control
+    function chatchange(){
+        document.getElementById("ccontr").style.display="block";
+        document.getElementById("c1").addEventListener("change",chatsetchange);
+        document.getElementById("c2").addEventListener("change",chatsetchange);
+        document.getElementById("c3").addEventListener("change",chatsetchange);
+        document.getElementById("c4").addEventListener("change",chatsetchange);
+        document.getElementById("c5").addEventListener("change",chatsetchange);
+        document.getElementById("c6").addEventListener("change",chatsetchange);
+        document.getElementById("c7").addEventListener("change",chatsetchange);
+        document.getElementById("c7a").addEventListener("change",chatsetchange);
+        document.getElementById("c8").addEventListener("change",chatsetchange);
+        var chatobserver = new MutationObserver(chatadjust);
+        var chatobserverConfig = {childList: true, subtree: true };
+        var observenode=document.getElementsByClassName("message-list")[0];
+        chatobserver.observe(observenode,chatobserverConfig);
+    }
+
+    function chatsetchange(){
+        c1=document.getElementById("c1").value;
+        c2=document.getElementById("c2").value;
+        c3=document.getElementById("c3").value;
+        c4=document.getElementById("c4").value;
+        c5=document.getElementById("c5").value;
+        c6=document.getElementById("c6").value;
+        c7=document.getElementById("c7").value;
+        c7a=document.getElementById("c7a").value;
+        if (c7a<2){c7a=2;document.getElementById("c7a").value=2};
+        if (c7a>1000){c7a=1000;document.getElementById("c7a").value=1000};
+        c8=document.getElementById("c8").value;
+        smallemoonoff();
+        chatadjust();// after change
+    }
+
+    function chatadjust(){
+        var tags=document.getElementsByClassName('msg-list-fvm');
+        for (n=0; n<tags.length; n++){
+            chattamper(n);
+        }
+    }
+
+    function chattamper(tag){
+        var messages=document.getElementsByClassName('msg-list-fvm')[tag].querySelectorAll('[data-testid="chat-message"]');
+        var chatmessages=messages.length;
+        if (chatmessages==0){return}
+        for (i=0; i<chatmessages; i++){
+// div notices---------------------------------------------------------------
+            var noticeelm=messages[i].querySelector('[data-testid="room-notice"]');
+            if (noticeelm!=null){
+                var noticeclasses=noticeelm.classList;
+                var notetext=noticeelm.querySelector('[data-testid="room-notice-viewport"]').textContent;
+                if (noticeclasses.length==1){ // notice with no additional class
+                    if (notetext.indexOf("Notice:")==0){ // normal notice
+                        if (c2==1){
+                            messages[i].style.display="none";
+                        }else{
+                            messages[i].style.display="block";
+                        }
+                    }
+                    if (notetext.indexOf("Moderator")==0){ //left / entered the room
+                        if (c4==1){
+                            messages[i].style.display="none";
+                        }else{
+                            messages[i].style.display="block";
+                        }
+                    }
+                    if (notetext.indexOf("Fan club member")==0){//left / entered the room
+                        if (c4==1){
+                            messages[i].style.display="none";
+                        }else{
+                            messages[i].style.display="block";
+                        }
+                    }
+                }
+
+                if (noticeclasses.contains("titleChange")){
+                    if (c3==1){
+                        messages[i].style.display="none";
+                    }else{
+                        messages[i].style.display="block";
+                    }
+                }
+
+                if (noticeclasses.contains("isTip")){
+                    var tokens=parseInt(notetext.split("tipped ")[1].split(" ")[0]);
+                    if (tag==0){
+                        if(messages[i].style.display=="flex"){
+                            document.getElementById("c9").innerHTML=parseInt(document.getElementById("c9").innerHTML)+tokens;
+                        }
+                    }
+                    if ((c7==1)&&(tokens<c7a)){
+                        messages[i].style.display="none";
+                    }else{
+                        messages[i].style.display="block";
+                    }
+                }
+
+            }//end roomnotice
+
+//div chattext-----------------------------------------
+            if (messages[i].querySelector('[data-testid="chat-message-text"]')!=null){
+//text in chattext-----------------------
+                if (messages[i].querySelector('[data-testid="chat-message-username"]').className=="broadcaster"){
+                    var chattext=messages[i].querySelector('[data-testid="chat-message-text"]').textContent;
+                    if ((chattext.indexOf("Lovense")!=-1)||(chattext.indexOf("------")!=-1)||(chattext.indexOf("******")!=-1)||(chattext.indexOf("The High Tipper")!=-1)||(chattext.indexOf("The king Tipper")!=-1)||(chattext.indexOf("Special Commands:")!=-1)||(chattext.indexOf("Blitz Mode")!=-1)){
+                        if (c8==1){
+                            messages[i].style.display="none";
+                        }else{
+                            messages[i].style.display="block";
+                        }
+                    }
+                }
+
+//div users in chattext-------------------------------
+                if (messages[i].querySelector('[data-testid="chat-message-username"]').className=="defaultUser"){ // grey user
+                    if (c5==1){
+                        messages[i].style.display="none";
+                    }else{
+                        messages[i].style.display="block";
+                    }
+                }
+                if (messages[i].querySelector('[data-testid="chat-message-username"]').className=="mod"){//mod user
+                    if (c6==1){
+                        messages[i].style.display="none";
+                    }else{
+                        messages[i].style.display="block";
+                    }
+                }
+            }
+        }
+    }
+
+//======== small emoticons
+    function smallemoonoff(){
+        if ((c1==1)&&(document.getElementById("emostyle")==null)){
+            var style = document.createElement('style');
+            style.setAttribute('type', 'text/css');
+            style.id="emostyle";
+            style.textContent = ".emoticonImage img {max-height:22px !important;}";
+            document.getElementsByTagName('head')[0].appendChild(style);
+        }
+        if ((c1==0)&&(document.getElementById("emostyle")!=null)){
+            document.getElementById("emostyle").remove();
+        }
+    }
+
+    function ccontrol(){
+        if (document.getElementById("chatcontrols").style.display=="block"){
+            document.getElementById("chatcontrols").style.display="none"
+        }else{
+            document.getElementById("chatcontrols").style.display="block"
+        }
+    }
+
+//====== open dm from bio
+    function opendm(that){
+       var dmwindow= window.open(that.href,'DMpop','toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=yes,width=800,height=800')
+       dmwindow.onload = function(){
+           this.addEventListener('unload', function(){setTimeout(function(){newinfo();},1000);})
+       }
+    }
+
+// get notes
+    function getnotes(){
+        var url="https://chaturbate.com/api/notes/for_user/"+roomname+"/";
+        fetching++;
+        fetch(url,{ credentials: "same-origin"}).then(
+            function(response) {
+                if (response.status !== 200) {
+                    fetching--;
+                    return;
+                }
+                response.json().then(function(data) {
+                    fetching--;
+                    if (data.text == null){data.text=""}
+                    opennote=data.text;
+                    buildprofnote();
+                    createimage();
+                });
+            });
+    }
+
+// pop up the rules
+    function makerulesarea(rule){
+        if (document.getElementById("rulespop")){return}
+        var rulestyle="cursor:pointer;z-index:999;top:10px;left:10px;box-shadow:0px 0px 32px rgba(0, 0, 0, 0.32);border-radius:4px;border:1px solid rgb(221, 221, 221);background-color:rgb(200, 200, 200);position:absolute; display:none; white-space: pre-line; text-align: left; line-height: 1.4; height: auto; width:500px; padding: 10px 10px 10px 10px; box-sizing: border-box; overflow-wrap: break-word; word-break: break-word; padding: 15px;"
+        var newelem=document.createElement('span');
+        newelem.setAttribute("style", rulestyle);
+        newelem.id="rulespop";
+        newelem.innerHTML="<b>"+roomname+" chatrules:</b><br><br>"+rule+"<br><br><center>(Click to close)</center>";
+        newelem.addEventListener("click",function(){this.style.display="none"});
+        document.querySelector('[data-testid="room-bio-tab-contents"]').appendChild(newelem);
+    }
+
+//puts in /p/ page jpegplayer , or last image or noting
+    function createimage(){
+        if ((document.location.href.split("/")[3]!="p")&&!noaccess){return;}
+        if ((document.getElementById("profimg"))&&(room_status!="public")){return;}
+        if (document.getElementById("profimg")){document.getElementById("profimg").remove();}
+        if (room_status=="public"){makeplayer();return}
+//now check if there is an active thumbnail
+        var url="https://jpeg.live.mmcdn.com/minifwap/"+roomname+".jpg";
+        fetch(url,{
+            cache: "no-cache",
+            credentials: "same-origin"}).then(
+            function(response){
+                var imgsize=response.headers.get("content-length");
+                if ((imgsize<4800)||(imgsize>4850)){makeimg();}
+            }
+        );
+    }
+
+    function makeimg(){
+        var newelem=document.createElement('img');
+        newelem.src="https://jpeg.live.mmcdn.com/minifwap/"+roomname+".jpg";
+        newelem.id="profimg";
+        newelem.style.zIndex="999";
+        newelem.style.position="absolute";
+        newelem.style.height="270px";
+        newelem.style.width="480px";
+        newelem.style.top="10px";
+        newelem.style.right="10px";
+        newelem.style.border="1px solid rgb(221, 221, 221)";
+        newelem.style.borderRadius="4px";
+        newelem.style.boxShadow="0px 0px 32px rgba(0, 0, 0, 0.32)";
+        document.querySelector('[data-testid="room-bio-tab-contents"]').appendChild(newelem);
+    }
+
+    function makeplayer(){
+        var newelem=document.createElement('img');
+        newelem.src="https://jpeg.live.mmcdn.com/minifwap/"+roomname+".jpg";
+        newelem.id="profimg";
+        newelem.style.zIndex="999";
+        newelem.style.position="absolute";
+        newelem.style.width="854px";
+        newelem.style.height="480px";
+        newelem.style.top="10px";
+        newelem.style.right="10px";
+        newelem.style.border="1px solid rgb(221, 221, 221)";
+        newelem.style.borderRadius="4px";
+        newelem.style.boxShadow="0px 0px 32px rgba(0, 0, 0, 0.32)";
+        document.querySelector('[data-testid="room-bio-tab-contents"]').appendChild(newelem);
+        pimg.addEventListener("load",regetimgprof);
+        pimg.addEventListener("error",errorimgprof);
+        pimg.src = "https://jpeg.live.mmcdn.com/stream?room="+roomname+"&f="+ new Date().getTime();
+    }
+
+    function errorimgprof(){
+        setTimeout(function(){pimg.src = "https://jpeg.live.mmcdn.com/stream?room="+roomname+"&f="+ new Date().getTime();}, 5000);
+    }
+
+    function regetimgprof(){
+        if ((document.visibilityState!="visible")||(document.querySelector('[data-testid="room-bio-tab-contents"]').style.height=="0px")){
+            setTimeout(regetimgprof,2000);
+        }else{
+            document.getElementById("profimg").src=pimg.src;
+            setTimeout(function(){pimg.src = "https://jpeg.live.mmcdn.com/stream?room="+roomname+"&f="+ new Date().getTime();}, 50);
+        }
+    }
+
+//----------note in profile
+    function buildprofnote(){
+        var subbutraw="<span id='profsubmit' style='color: rgb(255, 255, 255); background: rgba(0, 0, 0, 0) linear-gradient(rgb(255, 151, 53) 0%, rgb(255, 158, 54) 50%, rgb(255, 112, 2) 60%) repeat scroll 0% 0%; font-family: UbuntuMedium, Helvetica, Arial, sans-serif; font-size: 12px; padding: 4px 10px 5px; position: relative; left: 120px; float: left; border-radius: 4px; cursor: pointer;'>Save</span>";
+        wprof("",'<div width="200px" id="profnote" style="display:none"><a href=# id="profcancel">Cancel</a>'+subbutraw+'</div>');
+        wprof("Personal notes:","<textarea id='proftext' spellcheck='false' placeholder='Enter notes about this user (only seen by you)' style='width: 200px; height: 45px; line-height: 14px; border-width: 1px; border-style: solid; border-color: rgb(172, 172, 172); border-radius: 4px; padding: 7px 8px; overflow: auto;background-color: rgb(221, 233, 245);'></textarea>");
+        document.getElementById("proftext").value=opennote;
+        document.getElementById("proftext").addEventListener("input",profopenbutton);
+        document.getElementById("profcancel").addEventListener("click",profclosebutton);
+        document.getElementById("profsubmit").addEventListener("click",profsavenote);
+    }
+
+    function profsavenote(){
+        var notetext=document.getElementById("proftext").value;
+        var url="https://chaturbate.com/api/notes/for_user/"+roomname+"/";
+        var csrftoken= readCookie("csrftoken");
+        var data = new FormData();
+        data.append( "text", notetext );
+        fetch(url,
+              {
+            method: "POST",
+            headers: {
+                'x-csrftoken': csrftoken,
+                'x-requested-with': 'XMLHttpRequest'
+            },
+            body: data
+        }).then(profaftersave)
+    }
+
+    function profaftersave(){
+        opennote=document.getElementById("proftext").value;
+        profclosebutton();
+    }
+
+    function profopenbutton(){
+        document.getElementById("profnote").style.display="block";
+        document.getElementById("proftext").value=document.getElementById("proftext").value.replace("$"," "+new Date().toLocaleDateString()+" ");
+        if(opennote==document.getElementById("proftext").value){
+            profclosebutton();
+        }
+    }
+
+    function profclosebutton(){
+        document.getElementById("profnote").style.display="none";
+        document.getElementById("proftext").value=opennote;
+    }
+
+
+//------bio writer
+    function wprof(col1,col2){
+        var container=document.getElementsByClassName("BioContents")[0];
+        var newtr=document.createElement('tr');
+        newtr.setAttribute("style", "font-size: 14px; font-weight: normal; line-height: 15px; vertical-align: top; text-align: left;");
+        newtr.setAttribute("name", "info");
+        var newtd=document.createElement('td');
+        newtd.setAttribute("style", "padding-bottom: 9px; font-family: UbuntuMedium, Arial, Helvetica, sans-serif; height: 16px;");
+        newtd.className="label";
+        var newspan=document.createElement('span');
+        newspan.className="defaultColor";
+        newspan.innerHTML=col1;
+        newtd.appendChild(newspan);
+        var newtd2=document.createElement('td');
+        newtd2.setAttribute("style", "font-size: 14px; line-height: 16px; font-family: UbuntuRegular, Arial, Helvetica, sans-serif;");
+        newtd2.className="contentText";
+        newtd2.innerHTML=col2;
+        newtr.appendChild(newtd);
+        newtr.appendChild(newtd2);
+        var referenceNode=container.getElementsByTagName("table")[0];
+        referenceNode.insertBefore(newtr, referenceNode.getElementsByTagName("tr")[2]);
+    }
+
+// removes the extra info in the profile and gets it again
+    function newinfo(){
+     if (fetching!==0){alert("Slow down !");return;}
+        var tags=document.getElementsByName("info");
+  		for(i=tags.length-1;i>=0;i--){
+            tags[i].remove();
+        }
+        if (noaccess){
+            anoninfo();
+        }else{
+            info();
+        }
+    }
+
+
+ //=================== clean profile setup
+    function cleaninit(){
+        var p=0;
+        var maxoke="";
+        var tags=document.querySelectorAll('[rel="nofollow"]');
+        for (n=0; n<tags.length; n++){
+            if (tags[n].style.position){
+                if ((tags[n].style.position.indexOf("absolute")!=-1)||(tags[n].style.position.indexOf("fixed")!=-1)){
+                    tags[n].classList.add("profpos");
+                    p++;
+                }
+            }
+            // vh em of px  30em , 30 vh , 200px
+            if (tags[n].style.marginTop){
+                maxoke=-30;
+                if(tags[n].style.marginTop.indexOf("px")!=-1){maxoke=-200}
+                if (parseFloat(tags[n].style.marginTop)<maxoke){
+                    tags[n].classList.add("profmar");
+                    p++;
+                }
+            }
+            if (tags[n].style.margin){
+                maxoke=-30;
+                if(tags[n].style.margin.split(" ")[0].indexOf("px")!=-1){maxoke=-200}
+                if (parseFloat(tags[n].style.margin)<maxoke){
+                    tags[n].classList.add("profmar");
+                    p++;
+                }
+            }
+            if (tags[n].style.cursor){
+                tags[n].classList.add("profcur");
+                p++;
+            }
+        }
+        document.getElementById("clean").style.display="none";
+        if (p!==0){
+            document.getElementById("clean").style.display="block";
+            cleanup();
+        }
+    }
+
+//=========== swap profile cleanup cookie and call cleanup()
+	function cleancookie(){
+		if (readCookie("pclean")){
+			eraseCookie("pclean");
+		}else{
+			createCookie("pclean",1,30);
+        }
+		cleanup();
+	}
+
+// hide or unhide marked elements in profile according to cookie with css
+    function cleanup(){
+        var claction=!readCookie("pclean");
+        if (claction){
+            document.getElementById("clean").innerHTML= "CLEAN PROFILE = ON&nbsp;";
+            var style = document.createElement('style');
+            style.setAttribute('type', 'text/css');
+            style.id="profstyle";
+            style.textContent = ".profpos {display:none !important} .profmar {margin-top:0px !important;} .profcur{cursor:default !important }";
+            document.getElementsByTagName('head')[0].appendChild(style);
+        }else{
+            document.getElementById("clean").innerHTML= "CLEAN PROFILE = OFF";
+            if (document.getElementById("profstyle")!=null){
+                document.getElementById("profstyle").remove();
+            }
+        }
+    }
+
+//=============== links in bio fix
+    function linkfix(){
+        var bioarea= document.getElementsByClassName('BioContents')[0];
+        var tags = bioarea.getElementsByTagName('a');
+        for (i=0; i<tags.length; i++){
+            if (tags[i].href.indexOf("campaign=")!=-1){
+                tags[i].href=tour;
+            }
+            if (tags[i].href.indexOf('?url=') != -1){
+                var linkout=decodeURIComponent(tags[i].href).split("?url=")[1];
+                if (linkout.indexOf("campaign=")!=-1){
+                    linkout=tour;
+                }
+                tags[i].href=linkout;
+            }
+         }
+        if(document.querySelector('[data-testid="sign-up-tab"]')){
+            document.querySelector('[data-testid="sign-up-tab"]').href=tour;
+        }
+    }
+
+//===downloadlink my collection and model media in popup
+    function collectiondownload(){
+        document.getElementById("main").addEventListener("click", collectiondownload2);
+        collectiondownload2();
+    }
+
+    function collectiondownload2(){
+        setTimeout(function(){collectiondownload3()}, 2000);
+    }
+
+    function collectiondownload3(){
+        if(document.getElementsByTagName("video").length>0){
+            if(document.getElementsByTagName("video")[0].src){
+                if(!document.getElementById("link")){
+                    var newelem=document.createElement('a');
+                    newelem.id="link";
+                    newelem.href= document.getElementsByTagName("video")[0].src;
+                    newelem.target="_blank";
+                    newelem.innerHTML="Right click, save to disk.<br>";
+                    newelem.style.backgroundColor="white";
+                    newelem.style.marginLeft="20px";
+                    document.getElementsByClassName("createdAt")[0].parentNode.appendChild(newelem);
+                }
+            }
+        }
+    }
+
+//======= downloadlink saved private
+    function savedprvdownload(){
+        setTimeout(function(){savedprvdownload3();}, 2000);
+    }
+
+    function savedprvdownload3(){
+        var newelem=document.createElement('a');
+        newelem.href= document.getElementsByTagName("video")[0].src;
+        newelem.target="_blank";
+        newelem.innerHTML="Right click, save to disk.<br>";
+        newelem.style.backgroundColor="white";
+        newelem.style.marginLeft="20px";
+        document.getElementById("tsRecordedShowPlayer").appendChild(newelem);
+    }
+
+//==============================password room
+     function passwordfollow(){
+        setTimeout(function(){
+            var unfollow=document.querySelector('[data-testid="unfollow-button"]');
+            var follow=document.querySelector('[data-testid="follow-button"]');
+            if (unfollow.style.display=="none"){
+                follow.parentNode.parentNode.style.display="block";
+                follow.style.display="block";
+            }
+                unfollow.addEventListener("click", function(){setTimeout(function(){document.location.reload();}, 500);} );
+                follow.addEventListener("click", function(){setTimeout(function(){document.location.reload();}, 500);} );
+        }, 1000);
+
+         var newelem=document.createElement('div');
+         newelem.className="BioContents";
+         var newtable=document.createElement('table');
+         newelem.appendChild(newtable);
+         var newtr=document.createElement('tr');
+         newtable.appendChild(newtr);
+         newtr=document.createElement('tr');
+         newelem.style.position="relative"
+         newelem.style.float="left";
+         newtable.appendChild(newtr);
+         document.getElementsByClassName("defaultColor")[0].appendChild(newelem);
+         wprof ("DM:","<a href='https://chaturbate.com/dm/"+roomname+"/' id='dmpop'>Open window</a>");
+         document.getElementById("dmpop").addEventListener("click", function(event){opendm3(this);event.stopPropagation();event.preventDefault();return false});
+         getnotes();
+         document.getElementsByClassName("tooltip")[0].innerHTML="If follow does not work this room banned your region or gender.";
+         document.getElementById("tsContent").style.minHeight="400px";
+    }
+
+    function opendm3(that){
+        var dmwindow= window.open(that.href,'DMpop','toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=yes,width=800,height=800');
+    }
+
+//banned room
+    function bannedroom(){
+        document.getElementsByClassName("BaseRoomContents")[0].style.minHeight="505px";
+        var newelem=document.createElement('div');
+        newelem.style.width="100%";
+        newelem.style.height="1px";
+        newelem.setAttribute('data-testid', 'room-bio-tab-contents');
+        document.getElementsByClassName("BaseRoomContents")[0].appendChild(newelem);
+        newelem=document.createElement('div');
+        newelem.style.fontSize="15px";
+        newelem.style.fontWeight="bold";
+        newelem.style.color="red";
+        newelem.style.margin="14px 14px";
+        newelem.id="banreload";
+        newelem.innerHTML="Reload info.";
+        newelem.style.cursor="pointer";
+        newelem.addEventListener("click", newinfo);
+        document.getElementsByClassName("BaseRoomContents")[0].appendChild(newelem);
+        newelem=document.createElement('div');
+        newelem.className="BioContents";
+        var newtable=document.createElement('table');
+        newelem.appendChild(newtable);
+        var newtr=document.createElement('tr');
+        newtr.id="vcontr";
+        newtable.appendChild(newtr);
+        newtr=document.createElement('tr');
+        newtable.appendChild(newtr);
+        document.getElementsByClassName("BaseRoomContents")[0].appendChild(newelem);
+        anoninfo();
+    }
+
+    function anoninfo(){
+        var url="https://chaturbate.com/api/chatvideocontext/"+roomname+"/";
+        fetching++;
+        fetch(url,{ credentials: "omit"}).then(
+            function(response) {
+                if (response.status !== 200){ // region or gender block
+                    fetching--;
+                    document.getElementById("banreload").style.display="none";
+                    i=0;
+                    banimgsize();
+                    return;
+                }
+                response.json().then(function(roomdata) {
+                    data=roomdata;
+                    fetching--;
+                    setprofileinfo();
+                });
+            });
+    }
+
+    function banimgsize(){
+        var url="https://jpeg.live.mmcdn.com/minifwap/"+roomname+".jpg";
+        fetch(url,{
+            cache: "no-cache",
+            credentials: "omit",
+            referrerPolicy: "no-referrer"}).then(
+            function(response){
+                var imgsize=response.headers.get("content-length");
+                if (i==0){
+                    i=imgsize;
+                    setTimeout(banimgsize, 1000);
+                    return;
+                }
+                if (i!=imgsize){banonline();return}
+                if ((imgsize>4800)&&(imgsize<4850)){banoffline();return}
+                banwasonline();
+            }
+        );
+    }
+
+    function banonline(){
+        wprof("","<a href=# id=moreinfo>Click here to search for more info.</a>");
+        document.getElementById("moreinfo").addEventListener("click",moreinfo);
+        putinlinks();
+        wprof("Status:","Online");
+        makeplayer();
+        if(login){
+            getnotes();
+        }
+    }
+
+    function banwasonline(){
+        putinlinks();
+        wprof("Status:","Recently online.");
+        if(login){
+            getnotes();
+        }else{
+            makeimg();
+        }
+    }
+
+    function banoffline(){
+        putinlinks();
+        wprof("Status:","Offline.");
+        if(login){
+            getnotes();
+        }
+    }
+
+    function putinlinks(){
+        wprof("Find:","<a href='https://camgirlfinder.net/models?m="+roomname+"&p=cb&g=a' rel=noreferrer target='_new'>Open in camgirlfinder</a>");
+        wprof("Statistics:","<a href='https://statbate.com/search/1/"+roomname+"' rel=noreferrer target='_new'>Open in statbate</a>");
+        wprof("Schedule:","<a href='https://www.cbhours.com/user/"+roomname+".html' rel=noreferrer target='_new'>Open in cbhours</a>");
+    }
+
+    function moreinfo(){
+        document.getElementById("moreinfo").removeEventListener("click",moreinfo);
+        document.getElementById("moreinfo").innerHTML="Please wait....";
+        var dataurl="https://chaturbate.com/affiliates/api/onlinerooms/?format=json&wm=b0P2s";
+        fetch(dataurl,{credentials: "omit",referrerPolicy: "no-referrer"}).then(
+            function(response) {
+                if (response.status !== 200){
+                    document.getElementById("moreinfo").innerHTML="Error reading roomlist.";
+                    return;
+                }
+                response.json().then(function(data) {
+                    for (n=0; n<data.length; n++){
+                        if (data[n].username==roomname){
+                            wprof("Gender:",data[n].gender)
+                            wprof("Given location:",data[n].location);
+                            wprof("Country flag:",data[n].country);
+                            wprof("Room topic:","<div style='width:450px;height:auto'>"+data[n].room_subject+"</div>");
+                            wprof("Spoken languages:",data[n].spoken_languages);
+                            wprof("Name:", data[n].display_name);
+                            wprof("Birthday:",data[n].birthday);
+                            wprof("Age:",data[n].age);
+                            wprof("Time online:",toTime(data[n].seconds_online));
+                            wprof("Users in room:",data[n].num_users);
+                            wprof("Followers:",data[n].num_followers);
+                            document.getElementById("moreinfo").innerHTML="";
+                            data="";
+                            break;
+                        }
+                    }
+                    if (n==data.length){
+                        document.getElementById("moreinfo").innerHTML="No information found, user may no longer be in public or opt-out.";
+                        data="";
+                    }
+                });
+            })
+
+    }
+    function toTime(seconds) {
+        var date = new Date(null);
+        date.setSeconds(seconds);
+        return date.toISOString().substr(11, 8).replace(":","h").replace(":","m")+"s";
+    }
+
+//=============== cookie functions
+	function createCookie(name,value,days,domain){
+        var expires="";
+        if (domain){
+            domain=";domain=."+domain;
+        }else{
+            domain = "";
+        }
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime()+(days*24*60*60*1000));
+            expires = "; expires="+date.toGMTString();
+        }
+        document.cookie = name+"="+value+expires+"; path=/"+domain;
+	}
+
+	function readCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for(i=0;i < ca.length;i++) {
+            var c = ca[i];
+            while (c.charAt(0)==' '){
+                c = c.substring(1,c.length);
+            }
+            if (c.indexOf(nameEQ) === 0){
+                return c.substring(nameEQ.length,c.length);
+            }
+        }
+        return null;
+	}
+
+	function eraseCookie(name,domain){
+        createCookie(name,"",-1,domain);
+	}
+
+})();
